@@ -1,9 +1,14 @@
 package com.ratiose.testtask.service.tmdb.impl;
 
+import static org.springframework.util.StringUtils.isEmpty;
+
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.client.utils.URIBuilder;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -18,7 +23,9 @@ import com.ratiose.testtask.service.tmdb.dto.TmdbMovieInfo;
 @Service
 public class TmdbApiImpl implements TmdbApi {
 	
-    private static final String API_KEY_PARAMETER_NAME = "api_key";
+    private static final String MOVIE_CREDITS_URL = "/movie/%d/credits";
+    private static final String MOVIE_CREDITS_BY_PERSON_URL = "/person/%d/movie_credits";
+	private static final String API_KEY_PARAMETER_NAME = "api_key";
 	private static final String LANGUAGE_PARAMETER_NAME = "language";
 	private static final String MOVIE_URL = "/movie/";
 	private static final String PERSON_URL = "/person/";
@@ -78,6 +85,46 @@ public class TmdbApiImpl implements TmdbApi {
             movieInfo.setTitle(jsonMovieObject.getString("title"));
             movieInfo.setReleaseDate(jsonMovieObject.getString("release_date"));
             return movieInfo;
+        } catch (UnirestException e) {
+        	throw new RuntimeException(e);
+        } catch (URISyntaxException e) {
+        	throw new RuntimeException(e);
+        }
+	}
+	
+	@Override
+	public List<Integer> getAllMovieIdsByActor(Long actorId){
+        try {
+            String url = getTmdbUrl(String.format(MOVIE_CREDITS_BY_PERSON_URL,  actorId));
+            HttpResponse<JsonNode> jsonResponse = Unirest.get(url).asJson();
+            if (jsonResponse.getStatus() != HttpStatus.SC_OK)
+            	throw new RuntimeException(jsonResponse.getBody().toString());
+            JSONArray jsonCastArray = jsonResponse.getBody().getObject().getJSONArray("cast");
+            List<Integer> movieIds = new ArrayList<Integer>();
+            for(int index = 0; index < jsonCastArray.length(); index++) 
+            	if(!isEmpty(jsonCastArray.getJSONObject(index).getString("character")))
+            		movieIds.add(jsonCastArray.getJSONObject(index).getInt("id"));           
+            return movieIds;
+        } catch (UnirestException e) {
+        	throw new RuntimeException(e);
+        } catch (URISyntaxException e) {
+        	throw new RuntimeException(e);
+        }
+	}
+	
+	@Override
+	public List<Integer> getAllCastByMovie(Long movieId){
+        try {
+            String url = getTmdbUrl(String.format(MOVIE_CREDITS_URL, movieId));
+            HttpResponse<JsonNode> jsonResponse = Unirest.get(url).asJson();
+            if (jsonResponse.getStatus() != HttpStatus.SC_OK)
+            	throw new RuntimeException(jsonResponse.getBody().toString());
+            JSONArray jsonCastArray = jsonResponse.getBody().getObject().getJSONArray("cast");
+            List<Integer> actorIdList = new ArrayList<Integer>();
+            for(int index = 0; index < jsonCastArray.length(); index++) 
+            	if(!isEmpty(jsonCastArray.getJSONObject(index).getString("character")))
+            		actorIdList.add(jsonCastArray.getJSONObject(index).getInt("id"));           
+            return actorIdList;
         } catch (UnirestException e) {
         	throw new RuntimeException(e);
         } catch (URISyntaxException e) {

@@ -23,7 +23,7 @@ public class ActorController {
 	@Autowired
 	private UserService userService;
 	@Autowired
-	private ActorService favoritActorService;
+	private ActorService actorService;
 
 	@RequestMapping(value = "/addfavorit", method = POST)
 	public ResponseEntity addFavoriteActor(@RequestParam String email, @RequestParam String password,
@@ -31,7 +31,7 @@ public class ActorController {
 		User user = userService.findUser(email, password);
 		if (user == null)
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User with such email/password doesn't exist");
-		Actor addedActor = favoritActorService.addFavoritActor(favoritActorId, user);
+		Actor addedActor = actorService.addFavoritActor(favoritActorId, user);
 		return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body(addedActor);
 	}
 
@@ -43,7 +43,7 @@ public class ActorController {
         User user = userService.findUser(email, password);
 		if (user == null) 
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User with such email/password doesn't exist");
-        Actor removedActor = favoritActorService.removeFavoriteActor(favoritActorId, user);
+        Actor removedActor = actorService.removeFavoriteActor(favoritActorId, user);
         return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body(removedActor);
     }
 }

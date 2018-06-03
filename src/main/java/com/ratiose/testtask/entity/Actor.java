@@ -23,7 +23,7 @@ public class Actor {
 	String name;
 	
 	@ManyToMany(cascade = CascadeType.ALL)
-	@JoinTable(name = "FAVORITE_ACTORS", 
+	@JoinTable(name = "FAVORITE_ACTOR", 
 		joinColumns = { @JoinColumn(name = "ACTOR_ID") }, 
 		inverseJoinColumns = { @JoinColumn(name = "USER_ID") })
 	Set<User> users = new HashSet<User>(0);

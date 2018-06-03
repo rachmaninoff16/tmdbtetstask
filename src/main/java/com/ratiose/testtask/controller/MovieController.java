@@ -1,6 +1,9 @@
 package com.ratiose.testtask.controller;
 
+import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
+
+import java.util.List;
 
 import javax.servlet.http.HttpSession;
 
@@ -9,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -60,6 +64,16 @@ public class MovieController {
 		if (user == null)
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User with such email/password doesn't exist");
 		Movie makredMovie = movieService.markMovieWatched(movieId, user);
+		return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body(makredMovie);
+	}
+	
+	@RequestMapping(value = "/searchUnviewed", method = GET)
+	public ResponseEntity markMovieWatched(@RequestParam String email, @RequestParam String password,
+			@RequestParam Integer month, @RequestParam Integer year, HttpSession session) {
+		User user = userService.findUser(email, password);
+		if (user == null)
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User with such email/password doesn't exist");
+		List<Movie> makredMovie = movieService.getNotWatchedMoviesWithFavoriteActors(user, month, year);
 		return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body(makredMovie);
 	}
     

@@ -30,7 +30,7 @@ public class Movie {
 	
 	
 	@ManyToMany(cascade = CascadeType.ALL)
-	@JoinTable(name = "WATCHED_MOVIES", 
+	@JoinTable(name = "WATCHED_MOVIE", 
 		joinColumns = { @JoinColumn(name = "MOVIE_ID") }, 
 		inverseJoinColumns = { @JoinColumn(name = "USER_ID") })
 	Set<User> users = new HashSet<User>(0);
