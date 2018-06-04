@@ -25,56 +25,58 @@ import com.ratiose.testtask.service.tmdb.TmdbApi;
 @RestController
 @RequestMapping("/movie")
 public class MovieController {
-    @Autowired
-    private UserService userService;
+	@Autowired
+	private UserService userService;
+	@Autowired
+	private MovieService movieService;
+	@Autowired
+	private TmdbApi tmdbApi;
 
-    @Autowired
-    private MovieService movieService;
-    
-    @Autowired
-    private TmdbApi tmdbApi;
+	@RequestMapping(value = "/popular", method = POST)
+	public ResponseEntity popular(@RequestParam String email, @RequestParam String password, HttpSession session) {
+		if (userService.findUser(email, password) == null) {
+			return getBadRequestResponse();
+		}
+		String popularMovies = tmdbApi.popularMovies();
+		return getOkResponse(popularMovies);
+	}
 
-    @RequestMapping(value = "/popular", method = POST)
-    public ResponseEntity popular(@RequestParam String email,
-                                  @RequestParam String password,
-                                  HttpSession session) {
-        if (userService.findUser(email, password) == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }
-
-        String popularMovies = tmdbApi.popularMovies();
-
-        return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body(popularMovies);
-    }
-    
-//	@RequestMapping(value = "/add", method = POST)
-//	public ResponseEntity markMovieWatched(@RequestParam String email, @RequestParam String password,
-//			@RequestParam Long movieId, HttpSession session) {
-//		User user = userService.findUser(email, password);
-//		if (user == null)
-//			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User with such email/password doesn't exist");
-//		Actor addedActor = favoritActorService.addFavoritActor(movieId, user);
-//		return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body(addedActor);
-//	}
-    
-	@RequestMapping(value = "/makrWatched", method = POST)
-	public ResponseEntity markMovieWatched(@RequestParam String email, @RequestParam String password,
-			@RequestParam Long movieId, HttpSession session) {
+	@RequestMapping(value = "/add", method = POST)
+	public ResponseEntity addMovie(@RequestParam String email, @RequestParam String password,
+			@RequestParam Integer movieId, HttpSession session) {
 		User user = userService.findUser(email, password);
 		if (user == null)
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User with such email/password doesn't exist");
-		Movie makredMovie = movieService.markMovieWatched(movieId, user);
-		return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body(makredMovie);
+			return getBadRequestResponse();
+		Movie addedMovie = movieService.addMovie(movieId);
+		return getOkResponse(addedMovie);
 	}
-	
-	@RequestMapping(value = "/searchUnviewed", method = GET)
+
+	@RequestMapping(value = "/makrWatched", method = POST)
 	public ResponseEntity markMovieWatched(@RequestParam String email, @RequestParam String password,
+			@RequestParam Integer movieId, HttpSession session) {
+		User user = userService.findUser(email, password);
+		if (user == null)
+			return getBadRequestResponse();
+		Movie markedMovie = movieService.markMovieWatched(movieId, user);
+		return getOkResponse(markedMovie);
+	}
+
+	@RequestMapping(value = "/searchUnviewed", method = POST)
+	public ResponseEntity searchUnviewed(@RequestParam String email, @RequestParam String password,
 			@RequestParam Integer month, @RequestParam Integer year, HttpSession session) {
 		User user = userService.findUser(email, password);
 		if (user == null)
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User with such email/password doesn't exist");
-		List<Movie> makredMovie = movieService.getNotWatchedMoviesWithFavoriteActors(user, month, year);
-		return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body(makredMovie);
+			return getBadRequestResponse();
+		List<Movie> unviewedMovies = movieService.getUnviewedMoviesWithFavoriteActors(user, month, year);
+		return getOkResponse(unviewedMovies);
 	}
-    
+
+	private ResponseEntity getOkResponse(Object responseObject) {
+		return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body(responseObject);
+	}
+
+	private ResponseEntity getBadRequestResponse() {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User with such email/password doesn't exist");
+	}
+
 }

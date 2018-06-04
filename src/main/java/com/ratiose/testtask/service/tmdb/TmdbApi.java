@@ -6,8 +6,8 @@ import com.ratiose.testtask.service.tmdb.dto.TmdbMovieInfo;
 
 public interface TmdbApi {
     String popularMovies();
-    String getActorNameById(Long id);
-    TmdbMovieInfo getMovieInfo(Long id);
-    List<Integer> getAllCastByMovie(Long movieId);
-	List<Integer> getAllMovieIdsByActor(Long actorId);
+    String getActorNameById(Integer actorId);
+    TmdbMovieInfo getMovieInfo(Integer movieId);    
+    List<Integer> getAllCastByMovie(Integer movieId);
+	List<Integer> getAllMovieIdsByActor(Integer actorId);
 }

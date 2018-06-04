@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ import com.ratiose.testtask.service.tmdb.dto.TmdbMovieInfo;
 @Transactional
 public class MovieServiceImpl implements MovieService {
 
+	private static final String DATE_PATTERN = "yyyy-MM-dd";
 	@Autowired
 	private MovieRepository movieRepository;
 	@Autowired
@@ -33,7 +35,13 @@ public class MovieServiceImpl implements MovieService {
 	private TmdbApi tmdbApi;
 	
 	@Override
-	public Movie markMovieWatched(Long movieId, User user) {
+	public Movie addMovie(Integer movieId) {
+		Movie movie = createNewMovie(movieId);		
+		return movieRepository.save(movie);
+	}
+	
+	@Override
+	public Movie markMovieWatched(Integer movieId, User user) {
 		Movie movie = movieRepository.findByExternalId(movieId);
 		if (movie == null)
 			movie = createNewMovie(movieId);
@@ -42,23 +50,21 @@ public class MovieServiceImpl implements MovieService {
 	}
 	
 	@Override
-	public List<Movie> getNotWatchedMoviesWithFavoriteActors(User user, Integer month, Integer year) {
+	public List<Movie> getUnviewedMoviesWithFavoriteActors(User user, Integer month, Integer year) {
 		List<Actor> favoriteActors = actorRepository.findFavoriteActors(user.getEmail());
-		System.out.println("Favorite actors - " + favoriteActors);
-		List<Integer> actorsMovieIds = new ArrayList<Integer>();
-		for(Actor actor : favoriteActors)
-			actorsMovieIds.addAll(tmdbApi.getAllMovieIdsByActor(actor.getExternalId()));
-		System.out.println("Actors movies - " + actorsMovieIds);
-		List<Movie> unviewedMovies = movieRepository.findNotWatchedMoviesByMothAndYear(month, year);
-		for(Movie movie : unviewedMovies)
-			for(Integer movieId : actorsMovieIds)
-				if(movieId.equals(movie.getExternalId()))
-					unviewedMovies.remove(movie);
-		System.out.println("Final unviewedMovies - " + unviewedMovies);
-		return unviewedMovies;
+		List<Integer> favoriteActorsMovieIds = getFavoriteActorsMovieIds(favoriteActors);		
+		List<Movie> unviewedMovies = movieRepository.findUnviewedMoviesByMothAndYear(month, year);			
+		return clearNotFavoriteActorsMovies(favoriteActorsMovieIds, unviewedMovies);	
 	}
 
-	private Movie createNewMovie(Long movieId) {
+	private List<Integer> getFavoriteActorsMovieIds(List<Actor> favoriteActors) {
+		return favoriteActors.stream()
+			.map(actor -> tmdbApi.getAllMovieIdsByActor(actor.getExternalId()))
+			.flatMap(actorMovieIds -> actorMovieIds.stream())
+			.collect(Collectors.toList());
+	}
+
+	private Movie createNewMovie(Integer movieId) {
 		TmdbMovieInfo movieInfo = tmdbApi.getMovieInfo(movieId);
 		Movie movie = new Movie();
 		movie.setExternalId(movieId);
@@ -67,11 +73,20 @@ public class MovieServiceImpl implements MovieService {
 		return movie;
 	}
 
-	Date converStringToDate(String dateInString) {
-		String pattern = "yyyy-MM-dd";
-		DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern);
+	private Date converStringToDate(String dateInString) {
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_PATTERN);
 		LocalDate localDate = LocalDate.parse(dateInString, formatter);
 		return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+	}	
+
+	private List<Movie> clearNotFavoriteActorsMovies(List<Integer> actorsMovieIds, List<Movie> unviewedMovies) {
+		return unviewedMovies.stream()
+			.filter(
+				movie -> actorsMovieIds.stream()
+						.anyMatch(movieId -> movieId.equals(movie.getExternalId()))
+			)
+			.collect(Collectors.toList());
+			
 	}
 	
 	private HashSet<User> getUsers(User user) {

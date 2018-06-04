@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 import com.ratiose.testtask.entity.Actor;
 
 public interface ActorRepository extends CrudRepository<Actor,Long>{	
-	Actor findByExternalId(Long externalId);
+	Actor findByExternalId(Integer externalId);
 	
 	@Query(nativeQuery = true, value = "SELECT a.id, a.external_id, a.name "
 			+ "FROM ACTOR as a  "

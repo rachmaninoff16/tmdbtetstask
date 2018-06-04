@@ -9,6 +9,7 @@ import java.util.List;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.utils.URIBuilder;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -18,12 +19,18 @@ import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.ratiose.testtask.service.tmdb.TmdbApi;
+import com.ratiose.testtask.service.tmdb.TmdbExcpecion;
 import com.ratiose.testtask.service.tmdb.dto.TmdbMovieInfo;
 
 @Service
 public class TmdbApiImpl implements TmdbApi {
 	
-    private static final String MOVIE_CREDITS_URL = "/movie/%d/credits";
+    private static final String ID_FIELD = "id";
+	private static final String CHARACTER_FIELD = "character";
+	private static final String CAST_FIELD = "cast";
+	private static final String RELEASE_DATE_FIELD = "release_date";
+	private static final String TITLE_FIELD = "title";
+	private static final String MOVIE_CREDITS_URL = "/movie/%d/credits";
     private static final String MOVIE_CREDITS_BY_PERSON_URL = "/person/%d/movie_credits";
 	private static final String API_KEY_PARAMETER_NAME = "api_key";
 	private static final String LANGUAGE_PARAMETER_NAME = "language";
@@ -42,94 +49,78 @@ public class TmdbApiImpl implements TmdbApi {
         try {
             String url = getTmdbUrl("/movie/popular");
             HttpResponse<JsonNode> jsonResponse = Unirest.get(url).asJson();
-
-            if (jsonResponse.getStatus() != HttpStatus.SC_OK) {
-                return null;
-            }
-
-            String responseJSONString = jsonResponse.getBody().toString();
-
-            return responseJSONString;
+            checkForTmdbErrors(jsonResponse);
+            return jsonResponse.getBody().toString();            
         } catch (UnirestException e) {
-            e.printStackTrace();
+            throw new TmdbExcpecion(e);
         } catch (URISyntaxException e) {
-            e.printStackTrace();
-        }
-        return null;
+        	throw new TmdbExcpecion(e);
+        }        
     }
     
 	@Override
-	public String getActorNameById(Long id) {
+	public String getActorNameById(Integer id) {
         try {
             String url = getTmdbUrl(PERSON_URL + id);
             HttpResponse<JsonNode> jsonResponse = Unirest.get(url).asJson();
-            if (jsonResponse.getStatus() != HttpStatus.SC_OK)
-            	throw new RuntimeException(jsonResponse.getStatus() + " - " + jsonResponse.getStatusText());
+            checkForTmdbErrors(jsonResponse);
             return jsonResponse.getBody().getObject().getString(PERSON_NAME_FIELD);
         } catch (UnirestException e) {
-        	throw new RuntimeException(e);
+        	throw new TmdbExcpecion(e);
         } catch (URISyntaxException e) {
-        	throw new RuntimeException(e);
+        	throw new TmdbExcpecion(e);
         }		
 	}
+
 	
 	@Override
-	public TmdbMovieInfo getMovieInfo(Long id) {
+	public TmdbMovieInfo getMovieInfo(Integer id) {
         try {
             String url = getTmdbUrl(MOVIE_URL + id);
-            HttpResponse<JsonNode> jsonResponse = Unirest.get(url).asJson();
-            if (jsonResponse.getStatus() != HttpStatus.SC_OK)
-            	throw new RuntimeException(jsonResponse.getStatus() + " - " + jsonResponse.getStatusText());
-            TmdbMovieInfo movieInfo = new TmdbMovieInfo();
+            HttpResponse<JsonNode> jsonResponse = Unirest.get(url).asJson();            
+            checkForTmdbErrors(jsonResponse);            
             JSONObject jsonMovieObject = jsonResponse.getBody().getObject();
-            movieInfo.setTitle(jsonMovieObject.getString("title"));
-            movieInfo.setReleaseDate(jsonMovieObject.getString("release_date"));
-            return movieInfo;
+            return createMovieInfo(jsonMovieObject);
         } catch (UnirestException e) {
-        	throw new RuntimeException(e);
+        	throw new TmdbExcpecion(e);
         } catch (URISyntaxException e) {
-        	throw new RuntimeException(e);
+        	throw new TmdbExcpecion(e);
         }
 	}
 	
 	@Override
-	public List<Integer> getAllMovieIdsByActor(Long actorId){
+	public List<Integer> getAllMovieIdsByActor(Integer actorId){
         try {
             String url = getTmdbUrl(String.format(MOVIE_CREDITS_BY_PERSON_URL,  actorId));
             HttpResponse<JsonNode> jsonResponse = Unirest.get(url).asJson();
-            if (jsonResponse.getStatus() != HttpStatus.SC_OK)
-            	throw new RuntimeException(jsonResponse.getBody().toString());
-            JSONArray jsonCastArray = jsonResponse.getBody().getObject().getJSONArray("cast");
-            List<Integer> movieIds = new ArrayList<Integer>();
-            for(int index = 0; index < jsonCastArray.length(); index++) 
-            	if(!isEmpty(jsonCastArray.getJSONObject(index).getString("character")))
-            		movieIds.add(jsonCastArray.getJSONObject(index).getInt("id"));           
-            return movieIds;
+            checkForTmdbErrors(jsonResponse);
+            JSONArray jsonCastArray = jsonResponse.getBody().getObject().getJSONArray(CAST_FIELD);
+            return createMovieIdsList(jsonCastArray);
         } catch (UnirestException e) {
-        	throw new RuntimeException(e);
+        	throw new TmdbExcpecion(e);
         } catch (URISyntaxException e) {
-        	throw new RuntimeException(e);
+        	throw new TmdbExcpecion(e);
         }
 	}
 	
 	@Override
-	public List<Integer> getAllCastByMovie(Long movieId){
+	public List<Integer> getAllCastByMovie(Integer movieId){
         try {
             String url = getTmdbUrl(String.format(MOVIE_CREDITS_URL, movieId));
             HttpResponse<JsonNode> jsonResponse = Unirest.get(url).asJson();
-            if (jsonResponse.getStatus() != HttpStatus.SC_OK)
-            	throw new RuntimeException(jsonResponse.getBody().toString());
-            JSONArray jsonCastArray = jsonResponse.getBody().getObject().getJSONArray("cast");
-            List<Integer> actorIdList = new ArrayList<Integer>();
-            for(int index = 0; index < jsonCastArray.length(); index++) 
-            	if(!isEmpty(jsonCastArray.getJSONObject(index).getString("character")))
-            		actorIdList.add(jsonCastArray.getJSONObject(index).getInt("id"));           
-            return actorIdList;
+            checkForTmdbErrors(jsonResponse);
+            JSONArray jsonCastArray = jsonResponse.getBody().getObject().getJSONArray(CAST_FIELD);
+            return createMovieIdsList(jsonCastArray);
         } catch (UnirestException e) {
-        	throw new RuntimeException(e);
+        	throw new TmdbExcpecion(e);
         } catch (URISyntaxException e) {
-        	throw new RuntimeException(e);
+        	throw new TmdbExcpecion(e);
         }
+	}
+	
+	private void checkForTmdbErrors(HttpResponse<JsonNode> jsonResponse) {
+		if (jsonResponse.getStatus() != HttpStatus.SC_OK)
+			throw new TmdbExcpecion(jsonResponse.getBody().toString());
 	}
 
 
@@ -141,5 +132,20 @@ public class TmdbApiImpl implements TmdbApi {
         uriBuilder.addParameter(API_KEY_PARAMETER_NAME, tmdbApiKey);
         return uriBuilder.build().toString();
     }
+    
+	private TmdbMovieInfo createMovieInfo(JSONObject jsonMovieObject) throws JSONException {
+		TmdbMovieInfo movieInfo = new TmdbMovieInfo();
+		movieInfo.setTitle(jsonMovieObject.getString(TITLE_FIELD));
+		movieInfo.setReleaseDate(jsonMovieObject.getString(RELEASE_DATE_FIELD));
+		return movieInfo;
+	}
+	
+	private List<Integer> createMovieIdsList(JSONArray jsonCastArray) throws JSONException {
+		List<Integer> movieIds = new ArrayList<Integer>();
+		for(int index = 0; index < jsonCastArray.length(); index++) 
+			if(!isEmpty(jsonCastArray.getJSONObject(index).getString(CHARACTER_FIELD)))
+				movieIds.add(jsonCastArray.getJSONObject(index).getInt(ID_FIELD));           
+		return movieIds;
+	}
 
 }

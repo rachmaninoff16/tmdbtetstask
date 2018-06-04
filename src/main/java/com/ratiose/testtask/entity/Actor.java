@@ -19,7 +19,7 @@ public class Actor {
     @GeneratedValue    
     Long id;	
 	@Column(unique=true)
-	Long externalId;
+	Integer externalId;
 	String name;
 	
 	@ManyToMany(cascade = CascadeType.ALL)
@@ -34,10 +34,10 @@ public class Actor {
 	public void setId(Long id) {
 		this.id = id;
 	}
-	public Long getExternalId() {
+	public Integer getExternalId() {
 		return externalId;
 	}
-	public void setExternalId(Long externalId) {
+	public void setExternalId(Integer externalId) {
 		this.externalId = externalId;
 	}
 	public String getName() {

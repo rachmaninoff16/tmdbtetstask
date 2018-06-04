@@ -23,7 +23,7 @@ public class Movie {
     @GeneratedValue    
     Long id;	
 	@Column(unique=true)
-	Long externalId;	
+	Integer externalId;	
 	@Temporal(TemporalType.DATE)
 	Date releaseDate;
 	String title;
@@ -43,11 +43,11 @@ public class Movie {
 		this.id = id;
 	}
 	
-	public Long getExternalId() {
+	public Integer getExternalId() {
 		return externalId;
 	}
 	
-	public void setExternalId(Long externalId) {
+	public void setExternalId(Integer externalId) {
 		this.externalId = externalId;
 	}
 	

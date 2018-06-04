@@ -27,23 +27,29 @@ public class ActorController {
 
 	@RequestMapping(value = "/addfavorit", method = POST)
 	public ResponseEntity addFavoriteActor(@RequestParam String email, @RequestParam String password,
-			@RequestParam Long favoritActorId, HttpSession session) {
+			@RequestParam Integer favoritActorId, HttpSession session) {
 		User user = userService.findUser(email, password);
 		if (user == null)
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User with such email/password doesn't exist");
+			return getBadRequestResponse();
 		Actor addedActor = actorService.addFavoritActor(favoritActorId, user);
-		return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body(addedActor);
+		return getOkResponse(addedActor);
 	}
 
 	@RequestMapping(value = "/removefavorit", method = POST)
-    public ResponseEntity removeFavoriteActor(@RequestParam String email,
-                                  @RequestParam String password,
-                                  @RequestParam Long favoritActorId,
-                                  HttpSession session) {
-        User user = userService.findUser(email, password);
-		if (user == null) 
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User with such email/password doesn't exist");
-        Actor removedActor = actorService.removeFavoriteActor(favoritActorId, user);
-        return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body(removedActor);
-    }
+	public ResponseEntity removeFavoriteActor(@RequestParam String email, @RequestParam String password,
+			@RequestParam Integer favoritActorId, HttpSession session) {
+		User user = userService.findUser(email, password);
+		if (user == null)
+			return getBadRequestResponse();
+		Actor removedActor = actorService.removeFavoriteActor(favoritActorId, user);
+		return getOkResponse(removedActor);
+	}
+
+	private ResponseEntity getOkResponse(Object responseObject) {
+		return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body(responseObject);
+	}
+
+	private ResponseEntity<String> getBadRequestResponse() {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User with such email/password doesn't exist");
+	}
 }

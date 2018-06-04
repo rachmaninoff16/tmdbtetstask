@@ -22,7 +22,7 @@ public class ActorServiceImpl implements ActorService{
 	private ActorRepository actorRepository;
 	
 	@Override
-	public Actor addFavoritActor(Long favoritActorId, User user) {
+	public Actor addFavoritActor(Integer favoritActorId, User user) {
 		Actor actor = actorRepository.findByExternalId(favoritActorId);
 		if(actor == null ) 
 			actor = createNewActor(favoritActorId);		
@@ -31,7 +31,7 @@ public class ActorServiceImpl implements ActorService{
 	}
 	
 	@Override
-	public Actor removeFavoriteActor(Long favoritActorId, User user) {
+	public Actor removeFavoriteActor(Integer favoritActorId, User user) {
 		Actor actor = actorRepository.findByExternalId(favoritActorId);
 		if(actor == null)
 			throw new RuntimeException("Actor with external id " + favoritActorId + " doesn't exist");
@@ -39,7 +39,7 @@ public class ActorServiceImpl implements ActorService{
 		return actorRepository.save(actor);
 	}
 	
-	private Actor createNewActor(Long favoritActorId) {		
+	private Actor createNewActor(Integer favoritActorId) {		
 		String actorName = tmdbApi.getActorNameById(favoritActorId);
 		Actor actor = new Actor();
 		actor.setExternalId(favoritActorId);

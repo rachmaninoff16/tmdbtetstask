@@ -6,6 +6,7 @@ import com.ratiose.testtask.entity.Movie;
 import com.ratiose.testtask.entity.User;
 
 public interface MovieService {
-	Movie markMovieWatched(Long movieId, User user);
-	List<Movie> getNotWatchedMoviesWithFavoriteActors(User user, Integer month, Integer year);
+	Movie markMovieWatched(Integer movieId, User user);
+	List<Movie> getUnviewedMoviesWithFavoriteActors(User user, Integer month, Integer year);
+	Movie addMovie(Integer movieId);
 }
