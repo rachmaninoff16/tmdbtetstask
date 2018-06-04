@@ -9,7 +9,7 @@ For start app:
 curl -X POST --data "email=test@test2.com&password=test" http://localhost:8080/user/register/ -v
 
 ### View popular movies
-curl -X GET --data "email=test@test2.com&password=test" http://localhost:8080/movie/popular/ -v
+curl -X POST --data "email=test@test2.com&password=test" http://localhost:8080/movie/popular/ -v
 
 ### Add new favorite actor
 ### favoritActorId - code of actor in tmdb service
@@ -27,5 +27,5 @@ curl -X POST --data "email=test@test2.com&password=test&movieId=4476" http://loc
 ### movieId - code of a movie in tmdb service
 curl -X POST --data "email=test@test2.com&password=test&movieId=63" http://localhost:8080/movie/add/ -v
 
-### Search unviewe movies by user favorite actors and specific month and year 
-curl -X GET --data "email=test@test2.com&password=test&month=12&year=1995" http://localhost:8080/movie/searchUnviewed/ -v
+### Search unviewed movies by user favorite actors and specific month and year 
+curl -X POST --data "email=test@test2.com&password=test&month=12&year=1995" http://localhost:8080/movie/searchUnviewed/ -v
